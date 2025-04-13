@@ -1,0 +1,70 @@
+﻿@{
+    ViewData["Title"] = "SignalR Chat - Daily Task";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>SignalR Chat</title>
+    @* <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script> *@
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+
+   
+</head>
+<body>
+    <h2>Simple SignalR Chat - .NET 8</h2>
+
+    <input class="form-control" type="text" id="userInput" placeholder="Enter name" />
+    <input class="form-control" type="text" id="messageInput" placeholder="Enter message" />
+    <button type="button" class="btn btn-primary" onclick="sendMessage()">Send</button>
+
+    <ul id="messagesList"></ul>
+
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chathub")
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
+
+        connection.on("ReceiveMessage", (user, message) => {
+            const li = document.createElement("li");
+            li.textContent = `${user}: ${message}`;
+            document.getElementById("messagesList").appendChild(li);
+        });
+
+        async function startConnection() {
+            try {
+                await connection.start();
+                console.log("Connected");
+                document.getElementById("transportType").innerText = connection.transport?.name ?? "unknown";
+            } catch (err) {
+                console.error("Connection failed:", err);
+                setTimeout(startConnection, 2000);
+            }
+        }
+
+             connection.onclose(async () => {
+            alert(" Connection is closed now.");
+            console.log("Connection closed. Reconnecting in 2 seconds...");
+            setTimeout(startConnection, 2000); // Auto-reconnect
+        });
+
+
+        function sendMessage() {
+            const user = document.getElementById("userInput").value;
+            const message = document.getElementById("messageInput").value;
+
+            connection.invoke("SendMessage", user, message).catch(err => console.error(err));
+
+            userInput.value = "";
+            messageInput.value = "";
+
+            
+
+        }
+
+        startConnection();
+    </script>
+</body>
+</html>
